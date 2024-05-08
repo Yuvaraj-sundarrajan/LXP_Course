@@ -5,7 +5,7 @@ import { Button, Modal } from 'react-bootstrap';
 import '../Styles/AddCourse.css';
 
 const CourseForm = () => {
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState([]); // State for managing uploaded files
   const [form, setForm] = useState({
     title: '',
     category: '',
@@ -14,56 +14,57 @@ const CourseForm = () => {
     description: ''
   });
   const [errors, setErrors] = useState({});
-  const [selectedOption, setSelectedOption] = useState('');
   const [show, setShow] = useState(false);
- 
+  const [level, setLevel] = useState('');
+
   const handleChange = (event) => {
-    setSelectedOption(event.target.value);
-    if (event.target.value === 'Add catagory') {
-      handleShow();
+    const { name, value } = event.target;
+    
+    if (name === 'duration') {
+    // Validate positive number for duration field
+    if (parseInt(value) <= 0) {
+    setErrors({ ...errors, [name]: 'Duration must be a positive number' });
+    } else {
+    setErrors({ ...errors, [name]: null });
     }
-    if (event.target.value) {
-      setErrors({ ...errors, category: null });
+    } else {
+    setForm({ ...form, [name]: value });
+    setErrors({ ...errors, [name]: null });
+    
+    if (name === 'category' || name === 'level') {
+    // Handle category or level change
+    // You can add additional logic here based on the selected category or level
+    console.log(`Selected ${name}: ${value}`);
     }
-  };
- 
+    // Handle 'Add Category' click
+if (value === 'Add catagory') {
+  handleShow(); // Show the modal
+  }
+    }
+    };
+
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   const onDrop = useCallback(acceptedFiles => {
-    if (acceptedFiles.length > 1) {
-      alert("You can only upload one file");
-      return;
-    }
-
+    // File validation logic
     const file = acceptedFiles[0];
-    const fileType = file.type;
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-
-    if (!validImageTypes.includes(fileType)) {
-      alert("Invalid file type. The accepted file types are .jpg, .png, .jpeg");
-      return;
-    }
-
-    if (file.size > 250000) {
-      alert("File size exceeds the limit of 250KB");
-      return;
-    }
-
     setFiles([file]);
     setErrors({ ...errors, thumbnail: null });
   }, [errors]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: 'image/*', multiple: false });
 
-  const removeFile = file => () => {
+  const removeFile = () => {
     setFiles([]);
   };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setForm({ ...form, [name]: value });
+    if (value < 0) return;
 
+    setForm({ ...form, [name]: value });
     if (!value) {
       setErrors({ ...errors, [name]: `${name} is required` });
     } else {
@@ -73,56 +74,53 @@ const CourseForm = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-
+    
     const newErrors = {};
     Object.keys(form).forEach((key) => {
-      if (!form[key]) {
-        newErrors[key] = `Field required`;
-      }
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-    } 
-
-      // Check if files array is empty
-  if (files.length === 0) {
-    newErrors['thumbnail'] = 'Field required';
-  }
-    
-    
-    else {
-      // Submit the form
+    if (!form[key]) {
+    newErrors[key] = `Field required`;
     }
-  };
+    });
+    
+    if (files.length === 0) {
+    newErrors['thumbnail'] = 'Field required';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    } else {
+    // Submit the form
+    console.log('Form submitted:', form);
+    }
+    };
 
   return (
     <>
       <h2>Course Creation</h2>
       <hr/>
-      <div className="course-form">
+      <div className="course-form"> 
         <form onSubmit={handleSubmit}>
           <div className='addcourse'>
-            <label>
+          <label>
               Course Title:
               <input type="text" name="title" placeholder='Course title' onChange={handleInputChange} />
               {errors.title && <p className="error">{errors.title}</p>}
             </label>
             <label>
               Course Category:
-              <select  value={selectedOption} onChange={handleChange} >
-<option  disabled='Category' value="">Select catagory</option>
-<option value="Technical">Technical</option>
-<option value="communication">Communication</option>
-<option value="Behavioural">Behavioural</option>
-<option value="Add catagory" id='Add-catagory'>+ Add Catagory</option>
-</select>
+              <select name="category" value={form.category} onChange={handleChange}>
+                <option disabled value="">Select category</option>
+                <option value="Technical">Technical</option>
+                <option value="communication">Communication</option>
+                <option value="Behavioural">Behavioural</option>
+                <option value="Add catagory"  id='Add-catagory'>+ Add Category</option>
+              </select>
               {errors.category && <p className="error">{errors.category}</p>}
             </label>
             <label>
               Course Level:
-              <select name="level"  value={selectedOption} onChange={handleInputChange}>
-              <option disabled='Category' value="">Select Level</option>
+              <select name="level" value={form.level} onChange={handleChange}>
+                <option disabled value="">Select Level</option>
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
@@ -131,7 +129,7 @@ const CourseForm = () => {
             </label>
             <label>
               Course Duration (in Days):
-              <input type="number" placeholder='Enter no. of days' name="duration" onChange={handleInputChange} />
+              <input type="number" min={0} placeholder='Enter no. of days' name="duration" onChange={handleInputChange} />
               {errors.duration && <p className="error">{errors.duration}</p>}
             </label>
             <label>
@@ -141,38 +139,46 @@ const CourseForm = () => {
             </label>
             <label htmlFor=""> Course Thumbnail:</label>
             <div {...getRootProps()} className="course-thumbnail">
-  <input {...getInputProps()} />
-  {files.length > 0 ? (
-    <div className="uploaded-file">
-      <img src={URL.createObjectURL(files[0])} alt="uploaded thumbnail" className="thumbnail-image" />
-      <GiCancel onClick={removeFile(files[0])} className="cancel-icon" />
-    </div>
-    
-  ) : (
-    isDragActive ? "Drop files here..." : <span>Drag & Drop files here or <span className="upload-link">Click to upload</span></span>
-  )}
-  
-</div>
-<div className="file-name">{files.length > 0 && files[0].path}</div>
+              <input {...getInputProps()} />
+              {files.length > 0 ? (
+                <div className="uploaded-file">
+                  <img src={URL.createObjectURL(files[0])} alt="uploaded thumbnail" className="thumbnail-image" />
+                  <GiCancel onClick={removeFile} className="cancel-icon" />
+                </div>
+              ) : (
+                isDragActive ? "Drop files here..." : <span>Drag & Drop files here or <span className="upload-link">Click to upload</span></span>
+              )}
+            </div>
+            <div className="file-name">{files.length > 0 && files[0].name}</div>
+            {errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
 
-{errors.thumbnail && <p className="error">{errors.thumbnail}</p>}
+            <Modal show={show} onHide={handleClose}>
+              <Modal.Header closeButton>
+                <Modal.Title>Add Category</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+              <Modal.Body>
 
-
-<Modal show={show} onHide={handleClose}>
-<Modal.Header closeButton>
-<Modal.Title>Modal heading</Modal.Title>
-</Modal.Header>
-<Modal.Body>Woohoo, you're reading this text in a modal!</Modal.Body>
-<Modal.Footer>
-<Button variant="secondary" onClick={handleClose}>
-            Close
-</Button>
-<Button variant="primary" onClick={handleClose}>
-            Save Changes
-</Button>
-</Modal.Footer>
-</Modal>
-            <input type="submit" value="CREATE COURSE"  />
+            
+  <input 
+    type="text" 
+    placeholder="Enter new category" 
+    value={form.category} 
+    onChange={handleInputChange}
+    name="category"
+  />
+</Modal.Body>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={handleClose}>
+                  Close
+                </Button>
+                <Button variant="primary" onClick={handleClose}>
+                  Save Changes
+                </Button>
+              </Modal.Footer>
+            </Modal>
+            <input type="submit" value="CREATE COURSE" />
           </div>
         </form>
       </div>
