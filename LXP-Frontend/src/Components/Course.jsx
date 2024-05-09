@@ -7,11 +7,11 @@ import '../Styles/AddCourse.css';
 const CourseForm = () => {
   const [files, setFiles] = useState([]); // State for managing uploaded files
   const [form, setForm] = useState({
-    title: '',
-    category: '',
-    level: '',
-    duration: '',
-    description: ''
+    Title: '',
+    Category: '',
+    Level: '',
+    Duration: '',
+    Description: ''
   });
   const [errors, setErrors] = useState({});
   const [show, setShow] = useState(false);
@@ -84,17 +84,35 @@ const CourseForm = () => {
   const handleShow = () => setShow(true);
 
   const onDrop = useCallback(acceptedFiles => {
-    // File validation logic
+    if (acceptedFiles.length > 1) {
+      alert("You can only upload one file");
+      return;
+    }
+  
     const file = acceptedFiles[0];
+    const fileType = file.type;
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+  
+    if (!validImageTypes.includes(fileType)) {
+      alert("Invalid file type. The accepted file types are .jpg, .png, .jpeg");
+      return;
+    }
+  
+    if (file.size > 250000) {
+      alert("File size exceeds the limit of 250KB");
+      return;
+    }
+  
     setFiles([file]);
     setErrors({ ...errors, thumbnail: null });
-  }, []);
-
+  }, [errors]);
+  
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: 'image/*', multiple: false });
-
+  
   const removeFile = () => {
     setFiles([]);
   };
+  
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -104,7 +122,7 @@ const CourseForm = () => {
 
     setForm({ ...form, [name]: value });
     if (!value) {
-      setErrors({ ...errors, [name]: `${name} is required` });
+      setErrors({ ...errors, [name]: `**${name} is required**` });
     } else {
       setErrors({ ...errors, [name]: null });
     }
@@ -117,12 +135,12 @@ const CourseForm = () => {
     const newErrors = {};
     Object.keys(form).forEach((key) => {
         if (!form[key]) {
-            newErrors[key] = `Field required`;
+            newErrors[key] = `**Field required**`;
         }
     });
     
     if (files.length === 0) {
-        newErrors['thumbnail'] = 'Field required';
+        newErrors['thumbnail'] = '**Field required**';
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -169,12 +187,12 @@ const CourseForm = () => {
 <div className='addcourse'>
 <label>
 Course Title:
-<input type="text" name="title" placeholder='Course title' value={form.title} onChange={handleInputChange} />
+<input type="text" name="Title" placeholder='Course title' value={form.title} onChange={handleInputChange} />
 {errors.title && <p className="error">{errors.title}</p>}
 </label>
 <label>
 Course Category:
-<select name="category" value={form.category} onChange={handleChange}>
+<select name="Category" value={form.category} onChange={handleChange}>
 <option disabled value="">Select category</option>
 {categories.map((category, index) => (
 <option key={index} value={category}>{category}</option>
@@ -185,7 +203,7 @@ Course Category:
 </label>
 <label>
 Course Level:
-<select name="level" value={form.level} onChange={handleChange}>
+<select name="Level" value={form.level} onChange={handleChange}>
 <option disabled value="">Select Level</option>
 {levels.map((level, index) => (
 <option key={index} value={level}>{level}</option>
@@ -195,12 +213,12 @@ Course Level:
 </label>
 <label>
 Course Duration (in Days):
-<input type="number" min={0} placeholder='Enter no. of days' name="duration" value={form.duration} onChange={handleInputChange} />
+<input type="number" min={0} placeholder='Enter no. of days' name="Duration" value={form.duration} onChange={handleInputChange} />
 {errors.duration && <p className="error">{errors.duration}</p>}
 </label>
 <label>
 Course Description:
-<textarea placeholder='Enter your description' name="description" value={form.description} onChange={handleInputChange}></textarea>
+<textarea placeholder='Enter your description' name="Description" value={form.description} onChange={handleInputChange}></textarea>
 {errors.description && <p className="error">{errors.description}</p>}
 </label>
 <label htmlFor=""> Course Thumbnail:</label>
